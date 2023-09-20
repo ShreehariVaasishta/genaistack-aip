@@ -31,7 +31,7 @@ embedding = LCEmbedding.from_kwargs(
 print(">>> Embedding Configured")
 
 # Initialize vectordb component
-WEAVIATE_URL = "http://127.0.0.1:8002"
+WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 weaviate_db = WeaviateDB.from_kwargs(
     url=WEAVIATE_URL,
     index_name="Testing",
@@ -44,7 +44,7 @@ print(">>> VectorDB Configured")
 etl = LCETL.from_kwargs(
     name="DirectoryLoader",
     fields={
-        "path": "/home/sln/dphi_projects/aip-genai-stack/files",
+        "path": os.getenv("TARGET_FILES_DIR"),
         "glob": "**/*.pdf",
         "use_multithreading": True,
         "show_progress": True,
