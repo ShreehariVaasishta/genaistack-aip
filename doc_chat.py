@@ -81,6 +81,7 @@ while True:
     question = input("Enter your query: ")
 
     if question.strip() == "quit":
+        print("Stopping...")
         break
 
     response = retriever.retrieve(question)
