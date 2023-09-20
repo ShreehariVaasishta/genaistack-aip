@@ -4,7 +4,6 @@ External Deps:
 pip install unstructured
 pip install "unstructured[pdf]"
 """
-
 from genai_stack.embedding.langchain import LangchainEmbedding as LCEmbedding
 from genai_stack.etl.langchain import LangchainETL as LCETL
 from genai_stack.stack.stack import Stack
@@ -38,7 +37,6 @@ etl = LCETL.from_kwargs(
         "path": "/home/sln/dphi_projects/aip-genai-stack/files",
         "glob": "**/*.pdf",
         "use_multithreading": True,
-                "loader_cls":"langchain.document_loaders.PyPDFLoader",
         "show_progress": True,
     },
 )
@@ -49,12 +47,8 @@ stack = Stack(model=None, embedding=embedding, vectordb=weaviate_db, etl=etl)
 print(">>> Stacking of components Done...")
 
 # Search the db
-from langchain.docstore.document import Document
-from typing import List
 
-doc: List[Document] = weaviate_db.similarity_search("Broadcast Technicians")
-print(">>> Similarity Search Results:\n")
-
-# print(doc[0].metadata)
-print(doc[0])
-print([{"content": i.page_content, "page": i.metadata["page"], "path": i.metadata["source"]} for i in doc])
+if doc := stack.vectordb.similarity_search("Broadcast Technicians"):
+    print([{"content": i.page_content, "page": i.metadata["page"], "path": i.metadata["source"]} for i in doc])
+else:
+    print("Empty...")
