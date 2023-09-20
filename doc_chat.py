@@ -4,11 +4,20 @@ External Deps:
 pip install unstructured
 pip install "unstructured[pdf]"
 """
+import os
 
+from dotenv import load_dotenv
 from genai_stack.embedding.langchain import LangchainEmbedding as LCEmbedding
 from genai_stack.etl.langchain import LangchainETL as LCETL
+from genai_stack.memory.langchain import ConversationBufferMemory
+from genai_stack.model.gpt3_5 import OpenAIGpt35Model
+from genai_stack.prompt_engine.engine import PromptEngine
+from genai_stack.retriever.langchain import LangChainRetriever
 from genai_stack.stack.stack import Stack
 from genai_stack.vectordb.weaviate_db import Weaviate as WeaviateDB
+
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_APIKEY")
 
 # Initialize embedding component
 embedding = LCEmbedding.from_kwargs(
@@ -38,7 +47,6 @@ etl = LCETL.from_kwargs(
         "path": "/home/sln/dphi_projects/aip-genai-stack/files",
         "glob": "**/*.pdf",
         "use_multithreading": True,
-                "loader_cls":"langchain.document_loaders.PyPDFLoader",
         "show_progress": True,
     },
 )
@@ -49,13 +57,31 @@ stack = Stack(model=None, embedding=embedding, vectordb=weaviate_db, etl=etl)
 print(">>> Stacking of components Done...")
 
 # Search the db
-from typing import List
 
-from langchain.docstore.document import Document
+llm = OpenAIGpt35Model.from_kwargs(
+    parameters={
+        "openai_api_key": OPENAI_API_KEY,
+    }
+)
+prompt_engine = PromptEngine.from_kwargs(should_validate=False)
+retriever = LangChainRetriever.from_kwargs()
+memory = ConversationBufferMemory.from_kwargs()
 
-doc: List[Document] = weaviate_db.similarity_search("Broadcast Technicians")
-print(">>> Similarity Search Results:\n")
+Stack(
+    etl=etl,
+    embedding=embedding,
+    vectordb=weaviate_db,
+    model=llm,
+    prompt_engine=prompt_engine,
+    retriever=retriever,
+    memory=memory,
+)
 
-# print(doc[0].metadata)
-print(doc[0])
-print([{"content": i.page_content, "page": i.metadata["page"], "path": i.metadata["source"]} for i in doc])
+while True:
+    question = input("Enter your query: ")
+
+    if question.strip() == "quit":
+        break
+
+    response = retriever.retrieve(question)
+    print("Response: ", response.get("output"), end="\n\n")
